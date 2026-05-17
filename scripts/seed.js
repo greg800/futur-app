@@ -96,7 +96,8 @@ async function main() {
   }
 
   console.log('✓ Seed terminé — admin greg@starvolt.fr / future')
-  await pool.end()
+  pool.end().catch(() => {})
+  process.exit(0)
 }
 
 main().catch(err => {
