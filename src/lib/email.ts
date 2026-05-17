@@ -1,32 +1,27 @@
-import nodemailer from 'nodemailer'
-
-function getTransport() {
-  const host = process.env.SMTP_HOST
-  if (!host) return null
-
-  return nodemailer.createTransport({
-    host,
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: process.env.SMTP_SECURE === 'true',
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  })
-}
-
-const FROM = process.env.SMTP_FROM || 'noreply@f-futur.fr'
+const FROM = process.env.RESEND_FROM || 'noreply@starvolt.fr'
 
 export async function sendMail(to: string, subject: string, html: string) {
-  const transport = getTransport()
+  const apiKey = process.env.RESEND_API_KEY
 
-  if (!transport) {
+  if (!apiKey) {
     console.log(`[EMAIL] To: ${to} | Subject: ${subject}`)
     console.log(`[EMAIL] HTML:\n${html.replace(/<[^>]+>/g, '')}`)
     return
   }
 
-  await transport.sendMail({ from: FROM, to, subject, html })
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ from: FROM, to, subject, html }),
+  })
+
+  if (!res.ok) {
+    const err = await res.text()
+    console.error(`[EMAIL] Resend error: ${err}`)
+  }
 }
 
 export function forgotPasswordEmail(link: string) {
