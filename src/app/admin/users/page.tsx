@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
 import { getDb } from '@/lib/db'
+import Navbar from '@/components/Navbar'
 import AdminUsersClient from './AdminUsersClient'
 
 export default async function AdminUsersPage() {
@@ -16,5 +17,14 @@ export default async function AdminUsersPage() {
     ORDER BY u.created_at DESC
   `).all()
 
-  return <AdminUsersClient users={users as any[]} currentUserId={session.userId} />
+  const currentUser = db.prepare(
+    'SELECT first_name, last_name, pseudo, role FROM users WHERE id = ?'
+  ).get(session.userId) as any
+
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--surface)' }}>
+      <Navbar user={currentUser} />
+      <AdminUsersClient users={users as any[]} currentUserId={session.userId} />
+    </div>
+  )
 }

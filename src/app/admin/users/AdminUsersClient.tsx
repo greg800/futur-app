@@ -2,8 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Logo from '@/components/Logo'
-import Link from 'next/link'
 
 interface User {
   id: number
@@ -45,27 +43,7 @@ export default function AdminUsersClient({ users: initial, currentUserId }: { us
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--surface)' }}>
-      {/* Header */}
-      <div style={{
-        background: '#fff',
-        borderBottom: '1px solid var(--border)',
-        padding: '20px 32px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-      }}>
-        <Logo size={28} />
-        <nav style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
-          <Link href="/questionnaire" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>
-            ← Questionnaire
-          </Link>
-          <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--green)' }}>
-            Administration
-          </span>
-        </nav>
-      </div>
-
+    <div>
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 24px' }}>
         <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>
           Gestion des utilisateurs

@@ -26,6 +26,10 @@ export default async function QuestionPage({ params }: Props) {
     'SELECT answer, comment FROM responses WHERE user_id = ? AND question_id = ?'
   ).get(session.userId, question.id) as any
 
+  const user = db.prepare(
+    'SELECT first_name, last_name, pseudo, role FROM users WHERE id = ?'
+  ).get(session.userId) as any
+
   return (
     <QuestionClient
       step={step}
@@ -33,6 +37,7 @@ export default async function QuestionPage({ params }: Props) {
       question={question}
       initialAnswer={existing?.answer || null}
       initialComment={existing?.comment || ''}
+      user={user}
     />
   )
 }

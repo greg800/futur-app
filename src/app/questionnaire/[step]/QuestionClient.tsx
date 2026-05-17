@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import Logo from '@/components/Logo'
 
 interface Question {
@@ -12,12 +13,20 @@ interface Question {
   position: number
 }
 
+interface User {
+  first_name: string
+  last_name: string
+  pseudo: string
+  role: string
+}
+
 interface Props {
   step: number
   total: number
   question: Question
   initialAnswer: string | null
   initialComment: string
+  user: User
 }
 
 const ANSWERS = [
@@ -26,7 +35,8 @@ const ANSWERS = [
   { value: 'sans_position', label: 'Sans position', emoji: '–' },
 ]
 
-export default function QuestionClient({ step, total, question, initialAnswer, initialComment }: Props) {
+export default function QuestionClient({ step, total, question, initialAnswer, initialComment, user }: Props) {
+  const initials = `${user.first_name[0]}${user.last_name[0]}`.toUpperCase()
   const router = useRouter()
   const [answer, setAnswer] = useState<string | null>(initialAnswer)
   const [comment, setComment] = useState(initialComment)
@@ -84,16 +94,39 @@ export default function QuestionClient({ step, total, question, initialAnswer, i
 
       {/* Header */}
       <div style={{
-        padding: '20px 32px',
+        padding: '0 32px',
+        height: 56,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         borderBottom: '1px solid var(--border)',
+        background: '#fff',
       }}>
-        <Logo size={28} />
+        <Link href="/questionnaire"><Logo size={26} /></Link>
         <span style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500 }}>
           {step} / {total}
         </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {user.role === 'admin' && (
+            <Link href="/admin/users" style={{
+              fontSize: 13, fontWeight: 600, color: 'var(--green)',
+              background: 'var(--green-pale)', padding: '5px 12px', borderRadius: 20,
+            }}>Admin</Link>
+          )}
+          <Link href="/profile" style={{
+            display: 'flex', alignItems: 'center', gap: 7,
+            padding: '5px 10px 5px 5px', borderRadius: 20,
+            border: '1px solid var(--border)', textDecoration: 'none',
+          }}>
+            <div style={{
+              width: 26, height: 26, borderRadius: '50%',
+              background: 'var(--green)', color: '#fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 11, fontWeight: 700,
+            }}>{initials}</div>
+            <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>{user.pseudo}</span>
+          </Link>
+        </div>
       </div>
 
       {/* Main content */}
