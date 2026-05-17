@@ -67,6 +67,28 @@ async function main() {
     ON CONFLICT DO NOTHING
   `, ['Greg', 'Lamotte', 'greg', 'greg@starvolt.fr', futurEntityId, passwordHash, 'admin'])
 
+  // Dédupliquer les questions existantes (garder le plus petit id par position)
+  await pool.query(`
+    DELETE FROM responses WHERE question_id IN (
+      SELECT id FROM questions WHERE id NOT IN (
+        SELECT MIN(id) FROM questions GROUP BY position
+      )
+    )
+  `)
+  await pool.query(`
+    DELETE FROM questions WHERE id NOT IN (
+      SELECT MIN(id) FROM questions GROUP BY position
+    )
+  `)
+
+  // Ajouter contrainte UNIQUE sur position si elle n'existe pas
+  await pool.query(`
+    DO $$ BEGIN
+      ALTER TABLE questions ADD CONSTRAINT questions_position_unique UNIQUE (position);
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END $$
+  `)
+
   // Seed questions
   const questions = [
     "Instaurer et garantir le droit pour chacun de consommer et produire l'électricité qu'il souhaite",
@@ -90,7 +112,7 @@ async function main() {
 
   for (let i = 0; i < questions.length; i++) {
     await pool.query(
-      'INSERT INTO questions (section, preamble, text, position) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING',
+      'INSERT INTO questions (section, preamble, text, position) VALUES ($1, $2, $3, $4) ON CONFLICT (position) DO NOTHING',
       ['Pour un droit effectif à choisir son énergie', 'Vous engagez-vous à…', questions[i], i + 1]
     )
   }

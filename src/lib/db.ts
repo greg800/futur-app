@@ -41,7 +41,7 @@ export async function initSchema(): Promise<void> {
       section TEXT NOT NULL,
       preamble TEXT NOT NULL,
       text TEXT NOT NULL,
-      position INTEGER NOT NULL
+      position INTEGER NOT NULL UNIQUE
     );
     CREATE TABLE IF NOT EXISTS responses (
       id SERIAL PRIMARY KEY,
