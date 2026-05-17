@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
+import { query, execute } from '@/lib/db'
 import { getSession } from '@/lib/auth'
 
 export async function GET() {
@@ -8,13 +8,12 @@ export async function GET() {
     return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
   }
 
-  const db = getDb()
-  const users = db.prepare(`
+  const users = await query(`
     SELECT u.id, u.first_name, u.last_name, u.pseudo, u.email, u.role, u.created_at,
            e.name as entity_name
     FROM users u LEFT JOIN entities e ON u.entity_id = e.id
     ORDER BY u.created_at DESC
-  `).all()
+  `)
 
   return NextResponse.json({ users })
 }
@@ -30,8 +29,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Données invalides' }, { status: 400 })
   }
 
-  const db = getDb()
-  db.prepare('UPDATE users SET role = ? WHERE id = ?').run(role, userId)
+  await execute('UPDATE users SET role = $1 WHERE id = $2', [role, userId])
 
   return NextResponse.json({ ok: true })
 }

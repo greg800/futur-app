@@ -1,33 +1,32 @@
-import Database from 'better-sqlite3'
-import path from 'path'
-import fs from 'fs'
+import { Pool } from 'pg'
 
-const DATA_DIR = path.join(process.cwd(), 'data')
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true })
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+})
 
-const DB_PATH = path.join(DATA_DIR, 'futur.db')
-
-let _db: Database.Database | null = null
-
-export function getDb(): Database.Database {
-  if (!_db) {
-    _db = new Database(DB_PATH)
-    _db.pragma('journal_mode = WAL')
-    _db.pragma('foreign_keys = ON')
-    initSchema(_db)
-  }
-  return _db
+export async function query<T = any>(sql: string, params?: any[]): Promise<T[]> {
+  const result = await pool.query(sql, params)
+  return result.rows
 }
 
-function initSchema(db: Database.Database) {
-  db.exec(`
+export async function queryOne<T = any>(sql: string, params?: any[]): Promise<T | null> {
+  const result = await pool.query(sql, params)
+  return result.rows[0] ?? null
+}
+
+export async function execute(sql: string, params?: any[]): Promise<void> {
+  await pool.query(sql, params)
+}
+
+export async function initSchema(): Promise<void> {
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS entities (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       name TEXT NOT NULL UNIQUE
     );
-
     CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       first_name TEXT NOT NULL,
       last_name TEXT NOT NULL,
       pseudo TEXT NOT NULL UNIQUE,
@@ -35,32 +34,29 @@ function initSchema(db: Database.Database) {
       entity_id INTEGER REFERENCES entities(id),
       password_hash TEXT NOT NULL,
       role TEXT NOT NULL DEFAULT 'invite' CHECK(role IN ('invite','lecteur','admin')),
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-
     CREATE TABLE IF NOT EXISTS questions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       section TEXT NOT NULL,
       preamble TEXT NOT NULL,
       text TEXT NOT NULL,
       position INTEGER NOT NULL
     );
-
     CREATE TABLE IF NOT EXISTS responses (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       user_id INTEGER NOT NULL REFERENCES users(id),
       question_id INTEGER NOT NULL REFERENCES questions(id),
       answer TEXT CHECK(answer IN ('oui','non','sans_position')),
       comment TEXT,
-      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       UNIQUE(user_id, question_id)
     );
-
     CREATE TABLE IF NOT EXISTS password_reset_tokens (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       user_id INTEGER NOT NULL REFERENCES users(id),
       token TEXT NOT NULL UNIQUE,
-      expires_at TEXT NOT NULL,
+      expires_at TIMESTAMPTZ NOT NULL,
       used INTEGER NOT NULL DEFAULT 0
     );
   `)

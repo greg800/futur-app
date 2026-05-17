@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
-import { getDb } from '@/lib/db'
+import { queryOne } from '@/lib/db'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 
@@ -8,15 +8,19 @@ export default async function QuestionnaireLanding() {
   const session = await getSession()
   if (!session) redirect('/login')
 
-  const db = getDb()
-  const total = (db.prepare('SELECT COUNT(*) as c FROM questions').get() as any).c
-  const answered = (db.prepare(
-    'SELECT COUNT(*) as c FROM responses WHERE user_id = ? AND answer IS NOT NULL'
-  ).get(session.userId) as any).c
+  const totalRow = await queryOne<{ c: string }>('SELECT COUNT(*) as c FROM questions')
+  const total = parseInt(totalRow!.c)
 
-  const user = db.prepare(
-    'SELECT first_name, last_name, pseudo, role FROM users WHERE id = ?'
-  ).get(session.userId) as any
+  const answeredRow = await queryOne<{ c: string }>(
+    'SELECT COUNT(*) as c FROM responses WHERE user_id = $1 AND answer IS NOT NULL',
+    [session.userId]
+  )
+  const answered = parseInt(answeredRow!.c)
+
+  const user = await queryOne(
+    'SELECT first_name, last_name, pseudo, role FROM users WHERE id = $1',
+    [session.userId]
+  )
 
   const nextStep = answered < total ? answered + 1 : 1
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
-import { getDb } from '@/lib/db'
+import { queryOne } from '@/lib/db'
 import { signToken, setTokenCookie } from '@/lib/auth'
 
 export async function POST(req: NextRequest) {
@@ -10,8 +10,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Champs manquants' }, { status: 400 })
   }
 
-  const db = getDb()
-  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as any
+  const user = await queryOne('SELECT * FROM users WHERE email = $1', [email])
 
   if (!user || !(await bcrypt.compare(password, user.password_hash))) {
     return NextResponse.json({ error: 'Email ou mot de passe incorrect' }, { status: 401 })

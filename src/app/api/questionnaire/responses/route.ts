@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
+import { execute } from '@/lib/db'
 import { getSession } from '@/lib/auth'
 
 export async function POST(req: NextRequest) {
@@ -12,15 +12,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Données manquantes' }, { status: 400 })
   }
 
-  const db = getDb()
-  db.prepare(`
+  await execute(`
     INSERT INTO responses (user_id, question_id, answer, comment, updated_at)
-    VALUES (?, ?, ?, ?, datetime('now'))
-    ON CONFLICT(user_id, question_id) DO UPDATE SET
-      answer = excluded.answer,
-      comment = excluded.comment,
-      updated_at = excluded.updated_at
-  `).run(session.userId, questionId, answer, comment || null)
+    VALUES ($1, $2, $3, $4, NOW())
+    ON CONFLICT (user_id, question_id) DO UPDATE SET
+      answer = EXCLUDED.answer,
+      comment = EXCLUDED.comment,
+      updated_at = EXCLUDED.updated_at
+  `, [session.userId, questionId, answer, comment || null])
 
   return NextResponse.json({ ok: true })
 }

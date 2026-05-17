@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
-import { getDb } from '@/lib/db'
+import { query, queryOne } from '@/lib/db'
 import Navbar from '@/components/Navbar'
 import ResultatsClient from './ResultatsClient'
 import { Q_SUMMARIES } from '@/lib/questions'
@@ -10,29 +10,28 @@ export default async function ResultatsPage() {
   if (!session) redirect('/login')
   if (session.role === 'invite') redirect('/questionnaire')
 
-  const db = getDb()
+  const currentUser = await queryOne(
+    'SELECT first_name, last_name, pseudo, role FROM users WHERE id = $1',
+    [session.userId]
+  )
 
-  const currentUser = db.prepare(
-    'SELECT first_name, last_name, pseudo, role FROM users WHERE id = ?'
-  ).get(session.userId) as any
+  const questions = await query('SELECT id, position, text FROM questions ORDER BY position')
 
-  const questions = db.prepare('SELECT id, position, text FROM questions ORDER BY position').all() as any[]
-
-  const respondents = db.prepare(`
+  const respondents = await query(`
     SELECT u.id, u.first_name || ' ' || u.last_name as name,
            u.pseudo, e.name as entity,
            MAX(r.updated_at) as last_date
     FROM users u
     JOIN responses r ON r.user_id = u.id AND r.answer IS NOT NULL
     LEFT JOIN entities e ON u.entity_id = e.id
-    GROUP BY u.id
+    GROUP BY u.id, u.first_name, u.last_name, u.pseudo, e.name
     ORDER BY last_date ASC
-  `).all() as any[]
+  `)
 
-  const allResponses = db.prepare(`
+  const allResponses = await query(`
     SELECT user_id, question_id, answer, comment
     FROM responses WHERE answer IS NOT NULL
-  `).all() as any[]
+  `)
 
   const responseMap: Record<number, Record<number, { answer: string; comment: string | null }>> = {}
   ;(allResponses as any[]).forEach(r => {

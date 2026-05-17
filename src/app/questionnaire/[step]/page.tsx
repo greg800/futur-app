@@ -1,6 +1,6 @@
 import { redirect, notFound } from 'next/navigation'
 import { getSession } from '@/lib/auth'
-import { getDb } from '@/lib/db'
+import { query, queryOne } from '@/lib/db'
 import Navbar from '@/components/Navbar'
 import QuestionClient from './QuestionClient'
 
@@ -15,21 +15,22 @@ export default async function QuestionPage({ params }: Props) {
   const step = parseInt(params.step)
   if (isNaN(step) || step < 1) notFound()
 
-  const db = getDb()
-  const questions = db.prepare('SELECT * FROM questions ORDER BY position').all() as any[]
+  const questions = await query('SELECT * FROM questions ORDER BY position')
   const total = questions.length
 
   if (step > total) redirect('/questionnaire')
 
   const question = questions[step - 1]
 
-  const existing = db.prepare(
-    'SELECT answer, comment FROM responses WHERE user_id = ? AND question_id = ?'
-  ).get(session.userId, question.id) as any
+  const existing = await queryOne(
+    'SELECT answer, comment FROM responses WHERE user_id = $1 AND question_id = $2',
+    [session.userId, question.id]
+  )
 
-  const user = db.prepare(
-    'SELECT first_name, last_name, pseudo, role FROM users WHERE id = ?'
-  ).get(session.userId) as any
+  const user = await queryOne(
+    'SELECT first_name, last_name, pseudo, role FROM users WHERE id = $1',
+    [session.userId]
+  )
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#fff' }}>
