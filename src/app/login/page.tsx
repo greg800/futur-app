@@ -95,7 +95,13 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: 28, fontSize: 14, color: 'var(--text-secondary)' }}>
+        <p style={{ textAlign: 'center', marginTop: 16, fontSize: 14 }}>
+          <Link href="/forgot-password" style={{ color: 'var(--text-secondary)' }}>
+            Mot de passe oublié ?
+          </Link>
+        </p>
+
+        <p style={{ textAlign: 'center', marginTop: 12, fontSize: 14, color: 'var(--text-secondary)' }}>
           Pas encore de compte ?{' '}
           <Link href="/register" style={{ color: 'var(--green)', fontWeight: 500 }}>
             Créer un compte

@@ -42,6 +42,9 @@ export default function QuestionClient({ step, total, question, initialAnswer, i
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ questionId: question.id, answer: selectedAnswer, comment: currentComment }),
     })
+    if (step === total) {
+      fetch('/api/questionnaire/complete', { method: 'POST' })
+    }
     setExiting(true)
     setTimeout(() => {
       if (step < total) router.push(`/questionnaire/${step + 1}`)
@@ -79,8 +82,8 @@ export default function QuestionClient({ step, total, question, initialAnswer, i
   useEffect(() => () => { if (autoTimer.current) clearTimeout(autoTimer.current) }, [])
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#fff' }}>
-      {/* Progress bar — seul élément permanent */}
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      {/* Progress bar */}
       <div style={{ height: 3, background: 'var(--green-pale)', flexShrink: 0 }}>
         <div style={{
           height: '100%',

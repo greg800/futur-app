@@ -55,5 +55,13 @@ function initSchema(db: Database.Database) {
       updated_at TEXT NOT NULL DEFAULT (datetime('now')),
       UNIQUE(user_id, question_id)
     );
+
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      token TEXT NOT NULL UNIQUE,
+      expires_at TEXT NOT NULL,
+      used INTEGER NOT NULL DEFAULT 0
+    );
   `)
 }

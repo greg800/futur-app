@@ -27,9 +27,20 @@ export default function Navbar({ user }: Props) {
       top: 0,
       zIndex: 100,
     }}>
-      <Link href="/questionnaire">
-        <Logo size={26} />
-      </Link>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <Link href="/questionnaire">
+          <Logo size={26} />
+        </Link>
+        <a
+          href="https://futur.odoo.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="nav-link"
+          style={{ fontSize: 12 }}
+        >
+          notre site ↗
+        </a>
+      </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         {canSeeResults && (

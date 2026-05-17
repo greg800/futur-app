@@ -1,6 +1,7 @@
 import { redirect, notFound } from 'next/navigation'
 import { getSession } from '@/lib/auth'
 import { getDb } from '@/lib/db'
+import Navbar from '@/components/Navbar'
 import QuestionClient from './QuestionClient'
 
 interface Props {
@@ -31,13 +32,17 @@ export default async function QuestionPage({ params }: Props) {
   ).get(session.userId) as any
 
   return (
-    <QuestionClient
-      step={step}
-      total={total}
-      question={question}
-      initialAnswer={existing?.answer || null}
-      initialComment={existing?.comment || ''}
-      user={user}
-    />
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#fff' }}>
+      <Navbar user={user} />
+      <QuestionClient
+        key={step}
+        step={step}
+        total={total}
+        question={question}
+        initialAnswer={existing?.answer || null}
+        initialComment={existing?.comment || ''}
+        user={user}
+      />
+    </div>
   )
 }
