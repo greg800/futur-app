@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 interface User {
   id: number
@@ -211,6 +212,28 @@ export default function ProfileClient({ user, entities }: { user: User; entities
             {saving ? 'Enregistrement…' : 'Enregistrer'}
           </button>
         </form>
+      </div>
+
+      {/* Modifier mes réponses */}
+      <div style={{
+        background: '#fff',
+        border: '1px solid var(--border)',
+        borderRadius: 16,
+        padding: '24px 32px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 16,
+      }}>
+        <div>
+          <div style={{ fontWeight: 600, fontSize: 15 }}>Mes réponses au questionnaire</div>
+          <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>
+            Reprenez le questionnaire pour modifier vos réponses
+          </div>
+        </div>
+        <Link href="/questionnaire/1" className="btn" style={{ whiteSpace: 'nowrap' }}>
+          Modifier mes réponses
+        </Link>
       </div>
 
       {/* Déconnexion */}

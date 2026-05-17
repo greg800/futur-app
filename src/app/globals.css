@@ -68,6 +68,25 @@ input, select, textarea {
   color: var(--green);
 }
 
+@keyframes slideInRight {
+  from { transform: translateX(60px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+@keyframes slideOutLeft {
+  from { transform: translateX(0);    opacity: 1; }
+  to   { transform: translateX(-60px); opacity: 0; }
+}
+
+.slide-enter {
+  animation: slideInRight 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.slide-exit {
+  animation: slideOutLeft 0.28s cubic-bezier(0.55, 0, 0.45, 1) both;
+  pointer-events: none;
+}
+
 .field {
   display: flex;
   flex-direction: column;

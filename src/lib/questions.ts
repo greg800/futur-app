@@ -18,5 +18,25 @@ export const QUESTIONS = [
   "Permettre l'utilisation du chèque énergie pour acquérir du matériel électroménager de basse consommation",
 ]
 
+export const Q_SUMMARIES = [
+  "Droit de produire et consommer son électricité",
+  "Transition ENR priorité du quinquennat présidentiel",
+  "Campagnes audiovisuelles pour énergies renouvelables",
+  "Développer stockage par batteries (pilotabilité ENR)",
+  "Outils pilotage : panneaux, stockage, véhicule électrique",
+  "Raccordement rapide réseau ENR avec stockage inclus",
+  "Communautés d'énergie pour partage local ENR",
+  "Simplifier réglementation ENR, réduire coûts et délais",
+  "Autoconsommation individuelle plus facile et attractive",
+  "Faciliter l'autoconsommation collective",
+  "Tarifs HP/HC pour valoriser pics de production ENR",
+  "Projets ENR des collectivités : production + stockage",
+  "Production et conso ENR dans le parc HLM",
+  "Agrivoltaïsme : sécuriser dispositifs pour agriculteurs",
+  "Renforcer compétences territoriales ENR (ADEME, CEREMA)",
+  "Développer petits véhicules électriques accessibles",
+  "Chèque énergie pour électroménager basse consommation",
+]
+
 export const SECTION = "Pour un droit effectif à choisir son énergie"
 export const PREAMBLE = "Vous engagez-vous à…"

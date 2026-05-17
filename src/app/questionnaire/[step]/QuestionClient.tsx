@@ -1,9 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import Logo from '@/components/Logo'
 
 interface Question {
   id: number
@@ -13,77 +11,77 @@ interface Question {
   position: number
 }
 
-interface User {
-  first_name: string
-  last_name: string
-  pseudo: string
-  role: string
-}
-
 interface Props {
   step: number
   total: number
   question: Question
   initialAnswer: string | null
   initialComment: string
-  user: User
+  user: { first_name: string; last_name: string; pseudo: string; role: string }
 }
 
 const ANSWERS = [
-  { value: 'oui', label: 'Oui', emoji: '✓' },
-  { value: 'non', label: 'Non', emoji: '✗' },
-  { value: 'sans_position', label: 'Sans position', emoji: '–' },
+  { value: 'oui', label: 'Oui' },
+  { value: 'non', label: 'Non' },
+  { value: 'sans_position', label: 'Sans position' },
 ]
 
-export default function QuestionClient({ step, total, question, initialAnswer, initialComment, user }: Props) {
-  const initials = `${user.first_name[0]}${user.last_name[0]}`.toUpperCase()
+export default function QuestionClient({ step, total, question, initialAnswer, initialComment }: Props) {
   const router = useRouter()
   const [answer, setAnswer] = useState<string | null>(initialAnswer)
   const [comment, setComment] = useState(initialComment)
-  const [saving, setSaving] = useState(false)
   const [showComment, setShowComment] = useState(!!initialComment)
+  const [exiting, setExiting] = useState(false)
+  const autoTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const progress = Math.round((step - 1) / total * 100)
+  const progress = Math.round(step / total * 100)
 
-  const handleValidate = useCallback(async () => {
-    if (!answer) return
-    setSaving(true)
-
+  const navigate = useCallback(async (selectedAnswer: string, currentComment: string) => {
     await fetch('/api/questionnaire/responses', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questionId: question.id, answer, comment }),
+      body: JSON.stringify({ questionId: question.id, answer: selectedAnswer, comment: currentComment }),
     })
+    setExiting(true)
+    setTimeout(() => {
+      if (step < total) router.push(`/questionnaire/${step + 1}`)
+      else router.push('/questionnaire/merci')
+    }, 320)
+  }, [question.id, step, total, router])
 
-    setSaving(false)
+  const handleAnswerClick = useCallback((value: string) => {
+    if (exiting) return
+    setAnswer(value)
+    // Si commentaire ouvert, ne pas auto-avancer
+    if (showComment) return
+    if (autoTimer.current) clearTimeout(autoTimer.current)
+    autoTimer.current = setTimeout(() => navigate(value, comment), 500)
+  }, [exiting, showComment, comment, navigate])
 
-    if (step < total) {
-      router.push(`/questionnaire/${step + 1}`)
-    } else {
-      router.push('/questionnaire/merci')
-    }
-  }, [answer, comment, question.id, step, total, router])
+  const handleValidate = useCallback(() => {
+    if (!answer || exiting) return
+    if (autoTimer.current) clearTimeout(autoTimer.current)
+    navigate(answer, comment)
+  }, [answer, comment, exiting, navigate])
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Enter' && answer && !saving) handleValidate()
-      if (e.key === '1') setAnswer('oui')
-      if (e.key === '2') setAnswer('non')
-      if (e.key === '3') setAnswer('sans_position')
+      if (e.target instanceof HTMLTextAreaElement) return
+      if (e.key === 'Enter' && answer) handleValidate()
+      if (e.key === '1') handleAnswerClick('oui')
+      if (e.key === '2') handleAnswerClick('non')
+      if (e.key === '3') handleAnswerClick('sans_position')
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [answer, saving, handleValidate])
+  }, [answer, handleValidate, handleAnswerClick])
+
+  useEffect(() => () => { if (autoTimer.current) clearTimeout(autoTimer.current) }, [])
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      background: '#fff',
-    }}>
-      {/* Progress bar */}
-      <div style={{ height: 4, background: 'var(--green-pale)' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#fff' }}>
+      {/* Progress bar — seul élément permanent */}
+      <div style={{ height: 3, background: 'var(--green-pale)', flexShrink: 0 }}>
         <div style={{
           height: '100%',
           width: `${progress}%`,
@@ -92,216 +90,158 @@ export default function QuestionClient({ step, total, question, initialAnswer, i
         }} />
       </div>
 
-      {/* Header */}
-      <div style={{
-        padding: '0 32px',
-        height: 56,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        borderBottom: '1px solid var(--border)',
-        background: '#fff',
-      }}>
-        <Link href="/questionnaire"><Logo size={26} /></Link>
-        <span style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500 }}>
-          {step} / {total}
-        </span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {user.role === 'admin' && (
-            <Link href="/admin/users" style={{
-              fontSize: 13, fontWeight: 600, color: 'var(--green)',
-              background: 'var(--green-pale)', padding: '5px 12px', borderRadius: 20,
-            }}>Admin</Link>
-          )}
-          <Link href="/profile" style={{
-            display: 'flex', alignItems: 'center', gap: 7,
-            padding: '5px 10px 5px 5px', borderRadius: 20,
-            border: '1px solid var(--border)', textDecoration: 'none',
-          }}>
-            <div style={{
-              width: 26, height: 26, borderRadius: '50%',
-              background: 'var(--green)', color: '#fff',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 11, fontWeight: 700,
-            }}>{initials}</div>
-            <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>{user.pseudo}</span>
-          </Link>
-        </div>
-      </div>
-
-      {/* Main content */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '48px 24px',
-      }}>
+      {/* Contenu animé */}
+      <div
+        className={exiting ? 'slide-exit' : 'slide-enter'}
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '48px 24px',
+        }}
+      >
         <div style={{ width: '100%', maxWidth: 680 }}>
-          {/* Preamble */}
-          <p style={{
-            fontSize: 13,
-            fontWeight: 600,
-            color: 'var(--green)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            marginBottom: 20,
-          }}>
-            {question.preamble}
-          </p>
+          {/* Step + preamble */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+            <span style={{
+              fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)',
+              background: 'var(--surface)', padding: '4px 10px', borderRadius: 20,
+            }}>
+              {step} / {total}
+            </span>
+            <span style={{
+              fontSize: 12, fontWeight: 600, color: 'var(--green)',
+              textTransform: 'uppercase', letterSpacing: '0.08em',
+            }}>
+              {question.preamble}
+            </span>
+          </div>
 
-          {/* Question text */}
-          <h2 style={{
-            fontSize: 28,
-            fontWeight: 700,
-            lineHeight: 1.3,
-            marginBottom: 48,
-            color: 'var(--text)',
-          }}>
+          {/* Question */}
+          <h2 style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.3, marginBottom: 40, color: 'var(--text)' }}>
             {question.text}
           </h2>
 
-          {/* Answer options */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
+          {/* Answers */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
             {ANSWERS.map((opt, i) => {
               const selected = answer === opt.value
               return (
                 <button
                   key={opt.value}
-                  onClick={() => setAnswer(opt.value)}
+                  onClick={() => handleAnswerClick(opt.value)}
+                  disabled={exiting}
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 16,
-                    padding: '18px 24px',
+                    display: 'flex', alignItems: 'center', gap: 16,
+                    padding: '16px 22px',
                     border: `2px solid ${selected ? 'var(--green)' : 'var(--border)'}`,
                     borderRadius: 12,
                     background: selected ? 'var(--green-pale)' : '#fff',
                     textAlign: 'left',
                     transition: 'all 0.15s',
-                    cursor: 'pointer',
+                    cursor: exiting ? 'default' : 'pointer',
                   }}
                 >
                   <span style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 8,
+                    width: 34, height: 34, borderRadius: 8,
                     background: selected ? 'var(--green)' : 'var(--surface)',
                     color: selected ? '#fff' : 'var(--text-secondary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 16,
-                    fontWeight: 700,
-                    flexShrink: 0,
-                    transition: 'all 0.15s',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 14, fontWeight: 700, flexShrink: 0, transition: 'all 0.15s',
                   }}>
                     {i + 1}
                   </span>
                   <span style={{
-                    fontSize: 18,
-                    fontWeight: selected ? 600 : 400,
+                    fontSize: 17, fontWeight: selected ? 600 : 400,
                     color: selected ? 'var(--green)' : 'var(--text)',
                     transition: 'all 0.15s',
                   }}>
                     {opt.label}
                   </span>
-                  {selected && (
-                    <span style={{ marginLeft: 'auto', color: 'var(--green)', fontSize: 20 }}>
-                      {opt.emoji}
-                    </span>
-                  )}
+                  {selected && <span style={{ marginLeft: 'auto', color: 'var(--green)', fontSize: 18 }}>✓</span>}
                 </button>
               )
             })}
           </div>
 
-          {/* Comment toggle */}
-          {!showComment ? (
-            <button
-              onClick={() => setShowComment(true)}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--text-secondary)',
-                fontSize: 14,
-                cursor: 'pointer',
-                padding: '4px 0',
-                textDecoration: 'underline',
-                marginBottom: 32,
-              }}
-            >
-              + Ajouter un commentaire
-            </button>
-          ) : (
-            <div style={{ marginBottom: 32 }}>
+          {/* Comment + navigation */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {!showComment ? (
+              <button
+                onClick={() => { setShowComment(true); if (autoTimer.current) clearTimeout(autoTimer.current) }}
+                style={{
+                  background: 'none', border: 'none', color: 'var(--text-secondary)',
+                  fontSize: 13, cursor: 'pointer', padding: '2px 0',
+                  textDecoration: 'underline', textAlign: 'left',
+                }}
+              >
+                + Ajouter un commentaire
+              </button>
+            ) : (
               <textarea
                 value={comment}
                 onChange={e => setComment(e.target.value)}
                 placeholder="Commentaire optionnel…"
                 rows={3}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  border: '1px solid var(--border)',
-                  borderRadius: 8,
-                  fontSize: 15,
-                  color: 'var(--text)',
-                  resize: 'vertical',
-                  outline: 'none',
-                  fontFamily: 'inherit',
-                }}
                 autoFocus
+                style={{
+                  width: '100%', padding: '12px 16px',
+                  border: '1px solid var(--border)', borderRadius: 8,
+                  fontSize: 15, color: 'var(--text)', resize: 'vertical',
+                  outline: 'none', fontFamily: 'inherit',
+                }}
               />
-            </div>
-          )}
-
-          {/* Actions */}
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-            {step > 1 && (
-              <button
-                onClick={() => router.push(`/questionnaire/${step - 1}`)}
-                className="btn-ghost"
-              >
-                ← Précédente
-              </button>
             )}
-            <button
-              onClick={handleValidate}
-              disabled={!answer || saving}
-              className="btn"
-              style={{ minWidth: 180 }}
-            >
-              {saving ? 'Enregistrement…' : step < total ? 'Valider →' : 'Terminer ✓'}
-            </button>
-            <span style={{ fontSize: 13, color: 'var(--text-secondary)', marginLeft: 8 }}>
-              ou appuyez sur Entrée
-            </span>
+
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 4 }}>
+              {step > 1 && (
+                <button
+                  onClick={() => router.push(`/questionnaire/${step - 1}`)}
+                  style={{
+                    background: 'none', border: '1px solid var(--border)',
+                    padding: '10px 18px', borderRadius: 8, fontSize: 14,
+                    color: 'var(--text-secondary)', cursor: 'pointer',
+                  }}
+                >
+                  ← Retour
+                </button>
+              )}
+              {(showComment || !answer) && (
+                <button
+                  onClick={handleValidate}
+                  disabled={!answer || exiting}
+                  className="btn"
+                  style={{ minWidth: 140 }}
+                >
+                  {step < total ? 'Valider →' : 'Terminer ✓'}
+                </button>
+              )}
+              {!showComment && answer && !exiting && (
+                <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                  Entrée pour valider
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Navigation dots */}
+      {/* Dots */}
       <div style={{
-        padding: '16px 32px',
-        display: 'flex',
-        justifyContent: 'center',
-        gap: 6,
-        borderTop: '1px solid var(--border)',
+        padding: '14px 24px', display: 'flex', justifyContent: 'center',
+        gap: 5, borderTop: '1px solid var(--border)', flexShrink: 0,
       }}>
         {Array.from({ length: total }, (_, i) => (
           <div
             key={i}
+            onClick={() => !exiting && router.push(`/questionnaire/${i + 1}`)}
             style={{
-              width: i + 1 === step ? 24 : 8,
-              height: 8,
-              borderRadius: 4,
-              background: i + 1 < step ? 'var(--green)' : i + 1 === step ? 'var(--green)' : 'var(--border)',
-              transition: 'all 0.3s',
-              cursor: 'pointer',
+              width: i + 1 === step ? 22 : 7, height: 7, borderRadius: 4,
+              background: i + 1 <= step ? 'var(--green)' : 'var(--border)',
+              transition: 'all 0.3s', cursor: 'pointer',
             }}
-            onClick={() => router.push(`/questionnaire/${i + 1}`)}
           />
         ))}
       </div>
