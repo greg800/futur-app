@@ -24,6 +24,7 @@ export default function ResultatsClient({ questions, respondents: initial, respo
   const [respondents, setRespondents] = useState(initial)
   const [responseMap, setResponseMap] = useState(initialMap)
   const [deleting, setDeleting] = useState<number | null>(null)
+  const [popup, setPopup] = useState<{ name: string; question: string; comment: string } | null>(null)
 
   async function deleteResponses(r: Respondent) {
     if (!confirm(`Supprimer toutes les réponses de ${r.name} ?\n\nCette action est irrémédiable.`)) return
@@ -155,18 +156,33 @@ export default function ResultatsClient({ questions, respondents: initial, respo
                   const resp = responseMap[r.id]?.[q.id]
                   const display = resp ? ANSWER_DISPLAY[resp.answer] : null
                   return (
-                    <td key={r.id} style={{ ...tdCell(), textAlign: 'center' }} title={resp?.comment || undefined}>
-                      {display ? (
-                        <span style={{
-                          display: 'inline-block', padding: '4px 10px', borderRadius: 6,
-                          background: display.bg, color: display.color,
-                          fontWeight: 600, fontSize: 12, whiteSpace: 'nowrap',
-                        }}>
-                          {display.label}
-                        </span>
-                      ) : (
-                        <span style={{ color: 'var(--border)', fontSize: 16 }}>—</span>
-                      )}
+                    <td key={r.id} style={{ ...tdCell(), textAlign: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                        {display ? (
+                          <span style={{
+                            display: 'inline-block', padding: '4px 10px', borderRadius: 6,
+                            background: display.bg, color: display.color,
+                            fontWeight: 600, fontSize: 12, whiteSpace: 'nowrap',
+                          }}>
+                            {display.label}
+                          </span>
+                        ) : (
+                          <span style={{ color: 'var(--border)', fontSize: 16 }}>—</span>
+                        )}
+                        {resp?.comment && (
+                          <button
+                            onClick={() => setPopup({ name: r.name, question: q.text, comment: resp.comment! })}
+                            style={{
+                              background: 'var(--green-pale)', color: 'var(--green)',
+                              border: '1px solid var(--green)', borderRadius: 4,
+                              fontSize: 10, fontWeight: 700, padding: '2px 5px',
+                              cursor: 'pointer', flexShrink: 0, lineHeight: 1.4,
+                            }}
+                          >
+                            com
+                          </button>
+                        )}
+                      </div>
                     </td>
                   )
                 })}
@@ -176,9 +192,44 @@ export default function ResultatsClient({ questions, respondents: initial, respo
         </table>
       </div>
 
-      <p style={{ marginTop: 12, fontSize: 12, color: 'var(--text-secondary)' }}>
-        Survolez une réponse pour voir le commentaire éventuel.
-      </p>
+      {popup && (
+        <div
+          onClick={() => setPopup(null)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 100, padding: 24,
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#fff', borderRadius: 12, padding: '28px 32px',
+              maxWidth: 520, width: '100%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+            }}
+          >
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--green)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+              {popup.name}
+            </div>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: 16 }}>
+              {popup.question}
+            </p>
+            <p style={{ fontSize: 15, color: 'var(--text)', lineHeight: 1.6 }}>
+              {popup.comment}
+            </p>
+            <button
+              onClick={() => setPopup(null)}
+              style={{
+                marginTop: 20, background: 'none', border: '1px solid var(--border)',
+                borderRadius: 6, padding: '8px 16px', fontSize: 13,
+                cursor: 'pointer', color: 'var(--text-secondary)',
+              }}
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
