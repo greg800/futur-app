@@ -33,3 +33,22 @@ export async function PATCH(req: NextRequest) {
 
   return NextResponse.json({ ok: true })
 }
+
+export async function DELETE(req: NextRequest) {
+  const session = await getSession()
+  if (!session || session.role !== 'admin') {
+    return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+  }
+
+  const { userId } = await req.json()
+  if (!userId) return NextResponse.json({ error: 'userId requis' }, { status: 400 })
+  if (userId === session.userId) {
+    return NextResponse.json({ error: 'Impossible de se supprimer soi-même' }, { status: 400 })
+  }
+
+  await execute('DELETE FROM responses WHERE user_id = $1', [userId])
+  await execute('DELETE FROM password_reset_tokens WHERE user_id = $1', [userId])
+  await execute('DELETE FROM users WHERE id = $1', [userId])
+
+  return NextResponse.json({ ok: true })
+}

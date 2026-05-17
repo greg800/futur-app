@@ -47,6 +47,7 @@ export default async function ResultatsPage() {
         respondents={respondents}
         responseMap={responseMap}
         summaries={Q_SUMMARIES}
+        isAdmin={session.role === 'admin'}
       />
     </div>
   )
