@@ -87,6 +87,22 @@ input, select, textarea {
   pointer-events: none;
 }
 
+.nav-link {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  transition: border-color 0.15s, color 0.15s;
+  text-decoration: none;
+}
+
+.nav-link:hover {
+  border-color: var(--border);
+  color: var(--text);
+}
+
 .field {
   display: flex;
   flex-direction: column;

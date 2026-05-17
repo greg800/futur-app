@@ -33,15 +33,7 @@ export default function Navbar({ user }: Props) {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         {canSeeResults && (
-          <Link href="/resultats" style={{
-            fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)',
-            padding: '6px 14px', borderRadius: 20,
-            border: '1px solid transparent',
-            transition: 'all 0.15s',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-          onMouseLeave={e => (e.currentTarget.style.borderColor = 'transparent')}
-          >
+          <Link href="/resultats" className="nav-link">
             Résultats
           </Link>
         )}
